@@ -1,15 +1,6 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Header from "@/components/navbar-components/Header";
+import Sidebar from "../components/sidebar/Sidebar";
 
 export const metadata = {
   title: "Create Next App",
@@ -18,11 +9,21 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="en" className="h-full">
+      <body className="flex flex-col h-full bg-slate-50">
+        <Header />
+        <div className="flex flex-1 overflow-hidden"> {/* min-h: Ensure it takes full height below header (assuming header is ~64px tall) */}
+          {/* Sidebar - Visible on medium and larger screens */}
+          <aside className="hidden md:block w-60 bg-slate-900 text-fuchsia-50 p-4 shadow-lg border-r border-slate-700">
+            <Sidebar />
+          </aside>
+
+          {/* Main Content Area - Takes remaining space */}
+          <main className="flex-1 p-4 bg-gray-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"> {/* Added overflow-auto for content scrolling */}
+            {children} {/* This is where your page content will be rendered */}
+          </main>
+        </div>
+        {/* {children} */}
       </body>
     </html>
   );

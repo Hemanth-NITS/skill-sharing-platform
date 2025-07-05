@@ -1,0 +1,3 @@
+function GET ({req, res}){
+    
+}

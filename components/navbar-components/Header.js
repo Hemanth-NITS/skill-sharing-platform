@@ -163,7 +163,7 @@ export default function Header({ user }) { // Receive user prop from layout
               <DropdownMenuItem className="focus:bg-fuchsia-800/50 focus:text-fuchsia-50" onClick={() => router.push('/dashboard')}>
                 <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
               </DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-fuchsia-800/50 focus:text-fuchsia-50" onClick={() => router.push('/profile/edit')}>
+              <DropdownMenuItem className="focus:bg-fuchsia-800/50 focus:text-fuchsia-50" onClick={() => router.push('/profile/setup')}>
                 <UserCircle className="mr-2 h-4 w-4" /> My Profile
               </DropdownMenuItem>
               <DropdownMenuItem className="focus:bg-fuchsia-800/50 focus:text-fuchsia-50" onClick={() => router.push('/settings')}>

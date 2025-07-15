@@ -29,7 +29,6 @@
 // //   );
 // // }
 
-
 // // app/layout.jsx
 // // import { Inter } from "next/font/google";
 // // import "./globals.css";
@@ -52,7 +51,6 @@
 // //   // To test "logged out" state, keep user as null.
 // //   // const user = null; // Default: logged out
 
-  
 // //   // Uncomment this block to simulate a logged-in user:
 // //   const dummyUser = {
 // //     id: 'simulated-user-123',
@@ -65,7 +63,6 @@
 // //     }
 // //   };
 // //   const user = dummyUser; // Set user to dummyUser to simulate logged in
-  
 
 // //   return (
 // //     <html lang="en" className="h-full">
@@ -144,14 +141,12 @@
 //   );
 // }
 
-
-
-
 // app/layout.jsx
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/navbar-components/Header";
 import Sidebar from "../components/sidebar/Sidebar";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -161,24 +156,28 @@ export const metadata = {
 };
 
 // REMOVED 'modal' PROP
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   // --- SIMULATED USER STATE ---
   // const user = null; // Default: logged out
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  
+  // const user = user?.user || null;
+
   // Uncomment this block to simulate a logged-in user:
-  const dummyUser = {
-    id: 'simulated-user-123',
-    email: 'test@example.com',
-    fullName: 'Simulated User',
-    profilePic: 'https://api.dicebear.com/7.x/lorelei/svg?seed=SimulatedUser',
-    user_metadata: {
-      full_name: 'Simulated User',
-      avatar_url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=SimulatedUser',
-    }
-  };
-  const user = dummyUser; // Set user to dummyUser to simulate logged in
-  
+  // const dummyUser = {
+  //   id: 'simulated-user-123',
+  //   email: 'test@example.com',
+  //   fullName: 'Simulated User',
+  //   profilePic: 'https://api.dicebear.com/7.x/lorelei/svg?seed=SimulatedUser',
+  //   user_metadata: {
+  //     full_name: 'Simulated User',
+  //     avatar_url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=SimulatedUser',
+  //   }
+  // };
+  // const user = dummyUser; // Set user to dummyUser to simulate logged in
 
   return (
     <html lang="en" className="h-full">
@@ -200,4 +199,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-

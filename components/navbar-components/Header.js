@@ -265,7 +265,7 @@ export default function Header({ user }) {
       router.refresh(); // Refresh the page to force layout to re-fetch session (will be null)
       setTimeout(() => {
         router.push("/signin"); // Redirect to login page
-      }, 500);
+      }, 800);
       // router.push("/signin");
     }
   };

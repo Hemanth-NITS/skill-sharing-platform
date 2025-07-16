@@ -147,6 +147,7 @@ import "./globals.css";
 import Header from "@/components/navbar-components/Header";
 import Sidebar from "../components/sidebar/Sidebar";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -192,6 +193,7 @@ export default async function RootLayout({ children }) {
           <main className="flex-1 p-4 bg-gray-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {children}
           </main>
+          <Toaster />
         </div>
 
         {/* REMOVED: {modal} */}

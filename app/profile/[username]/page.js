@@ -448,19 +448,152 @@
 // app/profile/[username]/page.jsx
 // No "use client" here, this is a Server Component
 
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { Separator } from "@/components/ui/separator";
+// import { Star } from 'lucide-react';
+// import { SendRequestModal } from '@/components/profile/SendRequestModal';
+
+// import { createServerSupabaseClient } from '@/lib/supabase/server';
+
+// export default async function PublicProfilePage({ params }) {
+//   const { username } = params;
+
+//   const supabase = await createServerSupabaseClient();
+
+//   const { data: userProfile, error: profileError } = await supabase
+//     .from('profiles')
+//     .select('*, user_skills(skills(name, slug))')
+//     .eq('username', username)
+//     .single();
+
+//   if (profileError && profileError.code !== 'PGRST116') {
+//     console.error("Error fetching user profile:", profileError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Profile</h1>
+//         <p className="text-gray-600">An error occurred while trying to load the profile. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   if (!userProfile) {
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-gray-900 mb-4">User Not Found</h1>
+//         <p className="text-gray-600">The profile you are looking for does not exist.</p>
+//       </div>
+//     );
+//   }
+
+//   const skillsForDisplay = userProfile.user_skills.map(us => us.skills.name);
+
+//   const averageRating = 0;
+//   const totalSessions = 0;
+//   const testimonials = [];
+
+//   return (
+//     <div className="container mx-auto py-8 max-w-4xl">
+//       <Card className="p-6">
+//         <CardHeader className="flex flex-col md:flex-row items-center md:items-start gap-6 pb-4">
+//           <Avatar className="h-28 w-28 border-4 border-blue-500 shadow-md">
+//             {/* Use profile_picture_url from Supabase, fallback to DiceBear */}
+//             <AvatarImage src={userProfile.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${userProfile.username}`} alt={`${userProfile.full_name}'s profile`} />
+//             <AvatarFallback>{userProfile.full_name?.charAt(0) || userProfile.username?.charAt(0) || 'U'}</AvatarFallback>
+//           </Avatar>
+//           <div className="text-center md:text-left flex-1">
+//             <CardTitle className="text-4xl font-bold text-gray-900 mb-2">{userProfile.full_name}</CardTitle>
+//             <CardDescription className="text-xl text-gray-700 mb-2">@{userProfile.username}</CardDescription>
+//             <div className="flex items-center justify-center md:justify-start text-lg text-gray-600 mb-2">
+//               <Star className="h-5 w-5 text-yellow-500 mr-1 fill-current" />
+//               <span>{averageRating.toFixed(1)} Average Rating ({totalSessions} sessions)</span>
+//             </div>
+//             <SendRequestModal
+//               recipientName={userProfile.full_name}
+//               recipientUsername={userProfile.username}
+//             />
+//           </div>
+//         </CardHeader>
+
+//         <Separator className="my-6" />
+
+//         <CardContent className="space-y-6">
+//           {/* Bio Section */}
+//           <div>
+//             <h2 className="text-2xl font-semibold text-gray-800 mb-3">About {userProfile.full_name?.split(' ')[0] || userProfile.username}</h2>
+//             <p className="text-gray-700 leading-relaxed">{userProfile.bio}</p>
+//           </div>
+
+//           {/* Skills Section */}
+//           <div>
+//             <h2 className="text-2xl font-semibold text-gray-800 mb-3">Expertise Badges</h2>
+//             <div className="flex flex-wrap gap-2">
+//               {skillsForDisplay.length > 0 ? (
+//                 skillsForDisplay.map(skill => (
+//                   <Badge key={skill} variant="default" className="text-base px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white">
+//                     {skill}
+//                   </Badge>
+//                 ))
+//               ) : (
+//                 <p className="text-gray-600">No skills listed yet.</p>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Testimonials Section (Placeholder) */}
+//           <div>
+//             <h2 className="text-2xl font-semibold text-gray-800 mb-3">Testimonials</h2>
+//             {testimonials.length > 0 ? (
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 {/* Map through testimonials here when you fetch them */}
+//               </div>
+//             ) : (
+//               <p className="text-gray-600">No testimonials yet.</p>
+//             )}
+//           </div>
+//         </CardContent>
+//       </Card>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// app/profile/[username]/page.jsx
+// No "use client" here, this is a Server Component
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Star } from 'lucide-react';
-import { SendRequestModal } from '@/components/profile/SendRequestModal';
+// import { SendRequestModal } from '@/components/profile/SendRequestModal'; // REMOVE if not using modal anymore
+
+import { SendRequestButton } from '@/components/profile/SendRequestButton'; // NEW: Import the button component
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export default async function PublicProfilePage({ params }) {
-  const { username } = params;
+  const { username } = await params;
 
   const supabase = await createServerSupabaseClient();
+
+  // Get current authenticated user's ID
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  const currentUserId = currentUser?.id || null; // Will be null if not logged in
 
   const { data: userProfile, error: profileError } = await supabase
     .from('profiles')
@@ -487,6 +620,28 @@ export default async function PublicProfilePage({ params }) {
     );
   }
 
+  // NEW: Check for existing peer request status between current user and this profile user
+  let isConnected = false;
+  let requestStatus = null; // 'pending', 'accepted', 'declined'
+
+  if (currentUserId && currentUserId !== userProfile.id) { // Only check if logged in and not viewing own profile
+    const { data: existingRequest, error: requestCheckError } = await supabase
+      .from('peer_requests')
+      .select('status')
+      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userProfile.id}),and(sender_id.eq.${userProfile.id},receiver_id.eq.${currentUserId})`)
+      .single(); // Try to get a single matching request
+
+    if (requestCheckError && requestCheckError.code !== 'PGRST116') { // PGRST116 is no rows found
+      console.error("Error checking existing request status:", requestCheckError);
+    } else if (existingRequest) {
+      requestStatus = existingRequest.status;
+      if (requestStatus === 'accepted') {
+        isConnected = true;
+      }
+    }
+  }
+
+
   const skillsForDisplay = userProfile.user_skills.map(us => us.skills.name);
 
   const averageRating = 0;
@@ -498,7 +653,6 @@ export default async function PublicProfilePage({ params }) {
       <Card className="p-6">
         <CardHeader className="flex flex-col md:flex-row items-center md:items-start gap-6 pb-4">
           <Avatar className="h-28 w-28 border-4 border-blue-500 shadow-md">
-            {/* Use profile_picture_url from Supabase, fallback to DiceBear */}
             <AvatarImage src={userProfile.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${userProfile.username}`} alt={`${userProfile.full_name}'s profile`} />
             <AvatarFallback>{userProfile.full_name?.charAt(0) || userProfile.username?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
@@ -509,10 +663,15 @@ export default async function PublicProfilePage({ params }) {
               <Star className="h-5 w-5 text-yellow-500 mr-1 fill-current" />
               <span>{averageRating.toFixed(1)} Average Rating ({totalSessions} sessions)</span>
             </div>
-            <SendRequestModal
-              recipientName={userProfile.full_name}
-              recipientUsername={userProfile.username}
-            />
+            {/* Replace SendRequestModal with SendRequestButton */}
+            {currentUserId && ( // Only show button if a user is logged in
+              <SendRequestButton
+                recipientId={userProfile.id}
+                currentUserId={currentUserId}
+                isConnected={isConnected}
+                requestStatus={requestStatus}
+              />
+            )}
           </div>
         </CardHeader>
 

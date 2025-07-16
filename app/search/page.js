@@ -501,6 +501,309 @@
 // app/search/page.jsx
 // This is a Server Component, no "use client"
 
+// import { Input } from "@/components/ui/input";
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import Link from "next/link";
+// import { Star } from "lucide-react";
+// import { Label } from "@/components/ui/label";
+
+// import { SubmitButton } from "@/components/little/SubmitButton";
+// import { searchPeersAction } from "@/serverActions/search/actions";
+// import { searchProfiles } from '@/actions/profile'; // This will be updated to take two params
+
+// export default async function SearchPage({ searchParams }) {
+//   // Get both search queries from URL parameters
+//   const searchParam = await searchParams;
+//   const nameKeywordQuery = searchParam.query || ''; // For name/keyword search
+//   const skillSearchQuery = searchParam.skills || ''; // For skill search
+
+//   // Fetch profiles using the Server Action, passing both queries
+//   const { profiles: searchResults, error: searchError } = await searchProfiles(nameKeywordQuery, skillSearchQuery);
+
+//   if (searchError) {
+//     console.error("Error fetching profiles for search:", searchError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Search Results</h1>
+//         <p className="text-gray-600">An error occurred while trying to fetch profiles. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="container mx-auto py-8">
+//       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">Find Your Peers</h1>
+
+//       <form
+//         action={searchPeersAction} // This action will handle the redirect with new params
+//         className="flex flex-col gap-4 w-full max-w-xl mx-auto mb-8 bg-white p-6 rounded-lg shadow-md"
+//       >
+//         {/* Input for Name/Keyword Search */}
+//         <div className="w-full">
+//           <Label htmlFor="nameKeywordSearch">Search by Name or Keyword</Label>
+//           <Input
+//             id="nameKeywordSearch"
+//             type="text"
+//             placeholder="e.g., John Doe, frontend, mentor..."
+//             name="nameKeywordSearch" // New name for this input
+//             defaultValue={nameKeywordQuery}
+//             className="w-full"
+//           />
+//         </div>
+
+//         {/* Input for Skill Search */}
+//         <div className="w-full">
+//           <Label htmlFor="skillSearch">Search by Skill</Label>
+//           <Input
+//             id="skillSearch"
+//             type="text"
+//             placeholder="e.g., React.js, Python, UI/UX Design..."
+//             name="skillSearch" // New name for this input
+//             defaultValue={skillSearchQuery}
+//             className="w-full"
+//           />
+//         </div>
+
+//         <SubmitButton>Search</SubmitButton>
+//       </form>
+
+//       {/* Filters/Options (Placeholder) - remains the same */}
+//       <div className="mb-8 text-center">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+//           Filters (Coming Soon)
+//         </h2>
+//         <div className="flex justify-center space-x-4">
+//           <Button variant="outline" disabled>
+//             By Rating
+//           </Button>
+//           <Button variant="outline" disabled>
+//             By Availability
+//           </Button>
+//           <Button variant="outline" disabled>
+//             By Location
+//           </Button>
+//         </div>
+//       </div>
+
+//       {/* Search Results Display */}
+//       <div>
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Results</h2>
+//         {searchResults.length === 0 && nameKeywordQuery === "" && skillSearchQuery === "" ? (
+//           <p className="text-gray-600 text-center">
+//             Enter a name, keyword, or skill to find your peers!
+//           </p>
+//         ) : searchResults.length === 0 && (nameKeywordQuery !== "" || skillSearchQuery !== "") ? (
+//           <p className="text-gray-600 text-center">
+//             No peers found matching your criteria. Try a different search.
+//           </p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//             {searchResults.map((peer) => (
+//               <Card
+//                 key={peer.id}
+//                 className="hover:shadow-lg transition-shadow duration-200 flex flex-col"
+//               >
+//                 <CardHeader className="flex flex-row items-center space-x-4 pb-2">
+//                   <Avatar className="h-16 w-16">
+//                     <AvatarImage
+//                       src={peer.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${peer.username}`}
+//                       alt={`${peer.full_name}'s profile`}
+//                     />
+//                     <AvatarFallback>{peer.full_name?.charAt(0) || peer.username?.charAt(0) || 'U'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-xl">{peer.full_name}</CardTitle>
+//                     <CardDescription className="line-clamp-1">@{peer.username}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2 flex-grow flex flex-col justify-between">
+//                   <div className="flex items-center text-sm text-gray-600 mb-2">
+//                     <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
+//                     <span>0.0 Average Rating (0 sessions)</span> {/* Placeholder */}
+//                   </div>
+//                   <div className="flex flex-wrap gap-2 mb-4">
+//                     {peer.user_skills.map((us) => (
+//                       <Badge
+//                         key={us.skills.slug}
+//                         variant="default"
+//                         className="bg-blue-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full"
+//                       >
+//                         {us.skills.name}
+//                       </Badge>
+//                     ))}
+//                   </div>
+//                   <Link href={`/profile/${peer.username}`} className="w-full">
+//                     <Button className="mt-auto w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white">View Profile</Button>
+//                   </Link>
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+// app/search/page.jsx
+// This is a Server Component, no "use client"
+
+// import { Input } from "@/components/ui/input";
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import Link from "next/link";
+// import { Star } from "lucide-react";
+// import { Label } from "@/components/ui/label";
+
+// import { SubmitButton } from "@/components/little/SubmitButton";
+// import { searchPeersAction } from "@/serverActions/search/actions";
+// import { searchProfiles } from '@/actions/profile';
+
+// export default async function SearchPage({ searchParams }) {
+//   const nameKeywordQuery = searchParams.query || '';
+//   const skillSearchQuery = searchParams.skills || '';
+
+//   const { profiles: searchResults, error: searchError } = await searchProfiles(nameKeywordQuery, skillSearchQuery);
+
+//   if (searchError) {
+//     console.error("Error fetching profiles for search:", searchError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Search Results</h1>
+//         <p className="text-gray-600">An error occurred while trying to fetch profiles. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="container mx-auto py-8">
+//       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">Find Your Peers</h1>
+
+//       <form
+//         action={searchPeersAction}
+//         className="flex flex-col md:flex-row gap-4 w-full max-w-xl mx-auto mb-8 bg-white p-6 rounded-lg shadow-md items-end"
+//       >
+//         <div className="flex-1 w-full">
+//           <Label htmlFor="nameKeywordSearch">Search by Name or Keyword</Label>
+//           <Input
+//             id="nameKeywordSearch"
+//             type="text"
+//             placeholder="e.g., John Doe, frontend, mentor..."
+//             name="nameKeywordSearch"
+//             defaultValue={nameKeywordQuery}
+//             className="w-full"
+//           />
+//         </div>
+
+//         <div className="w-full">
+//           <Label htmlFor="skillSearch">Search by Skill</Label>
+//           <Input
+//             id="skillSearch"
+//             type="text"
+//             placeholder="e.g., React.js, Python, UI/UX Design..."
+//             name="skillSearch"
+//             defaultValue={skillSearchQuery}
+//             className="w-full"
+//           />
+//         </div>
+
+//         <SubmitButton>Search</SubmitButton>
+//       </form>
+
+//       {/* Filters/Options (Placeholder) - remains the same */}
+//       <div className="mb-8 text-center">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+//           Filters (Coming Soon)
+//         </h2>
+//         <div className="flex justify-center space-x-4">
+//           <Button variant="outline" disabled>
+//             By Rating
+//           </Button>
+//           <Button variant="outline" disabled>
+//             By Availability
+//           </Button>
+//           <Button variant="outline" disabled>
+//             By Location
+//           </Button>
+//         </div>
+//       </div>
+
+//       {/* Search Results Display */}
+//       <div>
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Results</h2>
+//         {searchResults.length === 0 && nameKeywordQuery === "" && skillSearchQuery === "" ? (
+//           <p className="text-gray-600 text-center">
+//             Enter a name, keyword, or skill to find your peers!
+//           </p>
+//         ) : searchResults.length === 0 && (nameKeywordQuery !== "" || skillSearchQuery !== "") ? (
+//           <p className="text-gray-600 text-center">
+//             No peers found matching your criteria. Try a different search.
+//           </p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//             {searchResults.map((peer) => (
+//               <Card
+//                 key={peer.id}
+//                 className="hover:shadow-lg transition-shadow duration-200 flex flex-col"
+//               >
+//                 <CardHeader className="flex flex-row items-center space-x-4 pb-2">
+//                   <Avatar className="h-16 w-16">
+//                     {/* Use profile_picture_url from Supabase, fallback to DiceBear */}
+//                     <AvatarImage
+//                       src={peer.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${peer.username}`}
+//                       alt={`${peer.full_name}'s profile`}
+//                     />
+//                     <AvatarFallback>{peer.full_name?.charAt(0) || peer.username?.charAt(0) || 'U'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-xl">{peer.full_name}</CardTitle>
+//                     <CardDescription className="line-clamp-1">@{peer.username}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2 flex-grow flex flex-col justify-between">
+//                   <div className="flex items-center text-sm text-gray-600 mb-2">
+//                     <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
+//                     <span>0.0 Average Rating (0 sessions)</span>
+//                   </div>
+//                   <div className="flex flex-wrap gap-2 mb-4">
+//                     {peer.user_skills.map((us) => (
+//                       <Badge
+//                         key={us.skills.slug}
+//                         variant="default"
+//                         className="bg-blue-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full"
+//                       >
+//                         {us.skills.name}
+//                       </Badge>
+//                     ))}
+//                   </div>
+//                   <Link href={`/profile/${peer.username}`} className="w-full">
+//                     <Button className="mt-auto w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white">View Profile</Button>
+//                   </Link>
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+// app/search/page.jsx
+// This is a Server Component, no "use client"
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -512,15 +815,13 @@ import { Label } from "@/components/ui/label";
 
 import { SubmitButton } from "@/components/little/SubmitButton";
 import { searchPeersAction } from "@/serverActions/search/actions";
-import { searchProfiles } from '@/actions/profile'; // This will be updated to take two params
+import { searchProfiles } from '@/actions/profile';
 
 export default async function SearchPage({ searchParams }) {
-  // Get both search queries from URL parameters
   const searchParam = await searchParams;
-  const nameKeywordQuery = searchParam.query || ''; // For name/keyword search
-  const skillSearchQuery = searchParam.skills || ''; // For skill search
+  const nameKeywordQuery = searchParam.query || '';
+  const skillSearchQuery = searchParam.skills || '';
 
-  // Fetch profiles using the Server Action, passing both queries
   const { profiles: searchResults, error: searchError } = await searchProfiles(nameKeywordQuery, skillSearchQuery);
 
   if (searchError) {
@@ -538,36 +839,40 @@ export default async function SearchPage({ searchParams }) {
       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">Find Your Peers</h1>
 
       <form
-        action={searchPeersAction} // This action will handle the redirect with new params
-        className="flex flex-col gap-4 w-full max-w-xl mx-auto mb-8 bg-white p-6 rounded-lg shadow-md"
+        action={searchPeersAction}
+        // Adjusted layout: flex-col by default, md:flex-row for larger screens
+        // gap-4 for spacing between items
+        // p-6 rounded-lg shadow-md for the card-like appearance
+        className="flex flex-col md:flex-row gap-4 w-full max-w-xl mx-auto mb-8 bg-white p-6 rounded-lg shadow-md items-end"
       >
         {/* Input for Name/Keyword Search */}
-        <div className="w-full">
-          <Label htmlFor="nameKeywordSearch">Search by Name or Keyword</Label>
+        <div className="flex-1 w-full"> {/* flex-1 makes it take available space, w-full for small screens */}
+          <Label htmlFor="nameKeywordSearch" className="mb-1 block">Search by Name or Keyword</Label> {/* Added mb-1 block */}
           <Input
             id="nameKeywordSearch"
             type="text"
             placeholder="e.g., John Doe, frontend, mentor..."
-            name="nameKeywordSearch" // New name for this input
+            name="nameKeywordSearch"
             defaultValue={nameKeywordQuery}
             className="w-full"
           />
         </div>
 
         {/* Input for Skill Search */}
-        <div className="w-full">
-          <Label htmlFor="skillSearch">Search by Skill</Label>
+        <div className="flex-1 w-full"> {/* flex-1 makes it take available space, w-full for small screens */}
+          <Label htmlFor="skillSearch" className="mb-1 block">Search by Skill</Label> {/* Added mb-1 block */}
           <Input
             id="skillSearch"
             type="text"
             placeholder="e.g., React.js, Python, UI/UX Design..."
-            name="skillSearch" // New name for this input
+            name="skillSearch"
             defaultValue={skillSearchQuery}
             className="w-full"
           />
         </div>
 
-        <SubmitButton>Search</SubmitButton>
+        {/* Submit Button - w-full on small, w-auto on md and up */}
+        <SubmitButton className="w-full md:w-auto mt-4 md:mt-0">Search</SubmitButton> {/* Added mt-4 md:mt-0 for spacing */}
       </form>
 
       {/* Filters/Options (Placeholder) - remains the same */}
@@ -622,7 +927,7 @@ export default async function SearchPage({ searchParams }) {
                 <CardContent className="pt-2 flex-grow flex flex-col justify-between">
                   <div className="flex items-center text-sm text-gray-600 mb-2">
                     <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
-                    <span>0.0 Average Rating (0 sessions)</span> {/* Placeholder */}
+                    <span>0.0 Average Rating (0 sessions)</span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {peer.user_skills.map((us) => (

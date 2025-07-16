@@ -266,6 +266,7 @@ export default function Header({ user }) {
       setTimeout(() => {
         router.push("/signin"); // Redirect to login page
       }, 500);
+      // router.push("/signin");
     }
   };
 

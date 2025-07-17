@@ -1127,6 +1127,683 @@
 
 
 
+// // app/my-sessions/page.jsx
+// // No "use client"; directive here, making this a Server Component by default
+
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { Button } from "@/components/ui/button";
+// import { Clock, CheckCircle, XCircle, CalendarDays, LinkIcon } from 'lucide-react';
+// import Link from 'next/link';
+
+// import { createServerSupabaseClient } from '@/lib/supabase/server';
+// import { SessionActionButtons } from '@/components/sessions/SessionActionButtons';
+
+// export default async function MySessionsPage() {
+//   const supabase = await createServerSupabaseClient();
+
+//   const { data: { user } } = await supabase.auth.getUser();
+
+//   if (!user) {
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
+//         <p className="text-gray-600">Please log in to view your sessions.</p>
+//       </div>
+//     );
+//   }
+
+//   const currentUserId = user.id;
+
+//   // NEW: Select the last_reschedule_initiator_id column
+//   const { data: rawSessions, error: sessionsError } = await supabase
+//     .from('sessions')
+//     .select('*, last_reschedule_initiator_id')
+//     .or(`proposer_id.eq.${currentUserId},attendee_id.eq.${currentUserId}`);
+
+//   if (sessionsError) {
+//     console.error("Error fetching sessions:", sessionsError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Sessions</h1>
+//         <p className="text-gray-600">An error occurred while trying to fetch your sessions. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   const allRelatedUserIds = new Set();
+//   rawSessions.forEach(session => {
+//     allRelatedUserIds.add(session.proposer_id);
+//     allRelatedUserIds.add(session.attendee_id);
+//     if (session.last_reschedule_initiator_id) { // Add initiator to map
+//       allRelatedUserIds.add(session.last_reschedule_initiator_id);
+//     }
+//   });
+
+//   const uniqueRelatedUserIds = Array.from(allRelatedUserIds).filter(Boolean);
+
+//   let profilesMap = new Map();
+//   if (uniqueRelatedUserIds.length > 0) {
+//     const { data: relatedProfiles, error: profilesError } = await supabase
+//       .from('profiles')
+//       .select('id, username, full_name, profile_picture_url');
+
+//     if (profilesError) {
+//       console.error("Error fetching related profiles for sessions:", profilesError);
+//     } else if (relatedProfiles) {
+//       relatedProfiles.forEach(profile => {
+//         profilesMap.set(profile.id, profile);
+//       });
+//     }
+//   }
+
+//   const enrichedSessions = rawSessions.map(session => ({
+//     ...session,
+//     proposer_profile: profilesMap.get(session.proposer_id),
+//     attendee_profile: profilesMap.get(session.attendee_id),
+//     last_reschedule_initiator_profile: profilesMap.get(session.last_reschedule_initiator_id), // NEW: Map initiator profile
+//   }));
+
+//   const sessionsYouProposed = enrichedSessions.filter(session => session.proposer_id === currentUserId);
+//   const sessionsWithYou = enrichedSessions.filter(session => session.attendee_id === currentUserId);
+
+//   const formatDateTime = (isoString) => {
+//     if (!isoString) return 'Not set';
+//     const date = new Date(isoString);
+//     return date.toLocaleString();
+//   };
+
+//   return (
+//     <div className="container mx-auto py-8 max-w-5xl">
+//       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">My Learning Sessions</h1>
+
+//       {/* Sessions You Proposed Section */}
+//       <section className="mb-10">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions You Proposed</h2>
+//         {sessionsYouProposed.length === 0 ? (
+//           <p className="text-gray-600">You haven't proposed any sessions yet. Accept a peer request or find a connected peer to propose one!</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsYouProposed.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.attendee_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.attendee_profile?.username}`} alt={session.attendee_profile?.full_name} />
+//                     <AvatarFallback>{session.attendee_profile?.full_name?.charAt(0) || session.attendee_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">With {session.attendee_profile?.full_name || session.attendee_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.attendee_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+                  
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id} // NEW: Pass initiator ID
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+
+//       {/* Sessions With You Section (where you are the attendee) */}
+//       <section>
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions With You</h2>
+//         {sessionsWithYou.length === 0 ? (
+//           <p className="text-gray-600">No sessions proposed to you yet.</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsWithYou.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.proposer_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.proposer_profile?.username}`} alt={session.proposer_profile?.full_name} />
+//                     <AvatarFallback>{session.proposer_profile?.full_name?.charAt(0) || session.proposer_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">From {session.proposer_profile?.full_name || session.proposer_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.proposer_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id} // NEW: Pass initiator ID
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+// // app/my-sessions/page.jsx
+// // No "use client"; directive here, making this a Server Component by default
+
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { Button } from "@/components/ui/button";
+// import { Clock, CheckCircle, XCircle, CalendarDays, LinkIcon } from 'lucide-react';
+// import Link from 'next/link';
+
+// import { createServerSupabaseClient } from '@/lib/supabase/server';
+// import { SessionActionButtons } from '@/components/sessions/SessionActionButtons';
+
+// export default async function MySessionsPage() {
+//   const supabase = await createServerSupabaseClient();
+
+//   const { data: { user } } = await supabase.auth.getUser();
+
+//   if (!user) {
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
+//         <p className="text-gray-600">Please log in to view your sessions.</p>
+//       </div>
+//     );
+//   }
+
+//   const currentUserId = user.id;
+
+//   // NEW: Select ratings(id, rater_id) to check if current user has rated
+//   const { data: rawSessions, error: sessionsError } = await supabase
+//     .from('sessions')
+//     .select(`
+//       *,
+//       last_reschedule_initiator_id,
+//       ratings(id, rater_id) // Fetch related ratings to check if current user has rated
+//     `)
+//     .or(`proposer_id.eq.${currentUserId},attendee_id.eq.${currentUserId}`);
+
+//   if (sessionsError) {
+//     console.error("Error fetching sessions:", sessionsError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Sessions</h1>
+//         <p className="text-gray-600">An error occurred while trying to fetch your sessions. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   const allRelatedUserIds = new Set();
+//   rawSessions.forEach(session => {
+//     allRelatedUserIds.add(session.proposer_id);
+//     allRelatedUserIds.add(session.attendee_id);
+//     if (session.last_reschedule_initiator_id) {
+//       allRelatedUserIds.add(session.last_reschedule_initiator_id);
+//     }
+//   });
+
+//   const uniqueRelatedUserIds = Array.from(allRelatedUserIds).filter(Boolean);
+
+//   let profilesMap = new Map();
+//   if (uniqueRelatedUserIds.length > 0) {
+//     const { data: relatedProfiles, error: profilesError } = await supabase
+//       .from('profiles')
+//       .select('id, username, full_name, profile_picture_url');
+
+//     if (profilesError) {
+//       console.error("Error fetching related profiles for sessions:", profilesError);
+//     } else if (relatedProfiles) {
+//       relatedProfiles.forEach(profile => {
+//         profilesMap.set(profile.id, profile);
+//       });
+//     }
+//   }
+
+//   const enrichedSessions = rawSessions.map(session => ({
+//     ...session,
+//     proposer_profile: profilesMap.get(session.proposer_id),
+//     attendee_profile: profilesMap.get(session.attendee_id),
+//     last_reschedule_initiator_profile: profilesMap.get(session.last_reschedule_initiator_id),
+//     // NEW: Determine if current user has given feedback for this session
+//     feedbackGiven: session.ratings.some(rating => rating.rater_id === currentUserId),
+//   }));
+
+//   const sessionsYouProposed = enrichedSessions.filter(session => session.proposer_id === currentUserId);
+//   const sessionsWithYou = enrichedSessions.filter(session => session.attendee_id === currentUserId);
+
+//   const formatDateTime = (isoString) => {
+//     if (!isoString) return 'Not set';
+//     const date = new Date(isoString);
+//     return date.toLocaleString();
+//   };
+
+//   return (
+//     <div className="container mx-auto py-8 max-w-5xl">
+//       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">My Learning Sessions</h1>
+
+//       {/* Sessions You Proposed Section */}
+//       <section className="mb-10">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions You Proposed</h2>
+//         {sessionsYouProposed.length === 0 ? (
+//           <p className="text-gray-600">You haven't proposed any sessions yet. Accept a peer request or find a connected peer to propose one!</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsYouProposed.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.attendee_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.attendee_profile?.username}`} alt={session.attendee_profile?.full_name} />
+//                     <AvatarFallback>{session.attendee_profile?.full_name?.charAt(0) || session.attendee_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">With {session.attendee_profile?.full_name || session.attendee_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.attendee_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+                  
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+//                     feedbackGiven={session.feedbackGiven} // NEW: Pass feedbackGiven
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+
+//       {/* Sessions With You Section (where you are the attendee) */}
+//       <section>
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions With You</h2>
+//         {sessionsWithYou.length === 0 ? (
+//           <p className="text-gray-600">No sessions proposed to you yet.</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsWithYou.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.proposer_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.proposer_profile?.username}`} alt={session.proposer_profile?.full_name} />
+//                     <AvatarFallback>{session.proposer_profile?.full_name?.charAt(0) || session.proposer_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">From {session.proposer_profile?.full_name || session.proposer_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.proposer_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+//                     feedbackGiven={session.feedbackGiven} // NEW: Pass feedbackGiven
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+// // app/my-sessions/page.jsx
+// // No "use client"; directive here, making this a Server Component by default
+
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { Button } from "@/components/ui/button";
+// import { Clock, CheckCircle, XCircle, CalendarDays, LinkIcon } from 'lucide-react';
+// import Link from 'next/link';
+
+// import { createServerSupabaseClient } from '@/lib/supabase/server';
+// import { SessionActionButtons } from '@/components/sessions/SessionActionButtons';
+
+// export default async function MySessionsPage() {
+//   const supabase = await createServerSupabaseClient();
+
+//   const { data: { user } } = await supabase.auth.getUser();
+
+//   if (!user) {
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
+//         <p className="text-gray-600">Please log in to view your sessions.</p>
+//       </div>
+//     );
+//   }
+
+//   const currentUserId = user.id;
+
+//   const { data: rawSessions, error: sessionsError } = await supabase
+//     .from('sessions')
+//     .select(`
+//       *,
+//       last_reschedule_initiator_id,
+//       ratings(id, rater_id) // Fetch related ratings to check if current user has rated
+//     `)
+//     .or(`proposer_id.eq.${currentUserId},attendee_id.eq.${currentUserId}`);
+
+//   if (sessionsError) {
+//     console.error("Error fetching sessions:", sessionsError);
+//     return (
+//       <div className="container mx-auto py-8 text-center">
+//         <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Sessions</h1>
+//         <p className="text-gray-600">An error occurred while trying to fetch your sessions. Please try again later.</p>
+//       </div>
+//     );
+//   }
+
+//   const allRelatedUserIds = new Set();
+//   rawSessions.forEach(session => {
+//     allRelatedUserIds.add(session.proposer_id);
+//     allRelatedUserIds.add(session.attendee_id);
+//     if (session.last_reschedule_initiator_id) {
+//       allRelatedUserIds.add(session.last_reschedule_initiator_id);
+//     }
+//   });
+
+//   const uniqueRelatedUserIds = Array.from(allRelatedUserIds).filter(Boolean);
+
+//   let profilesMap = new Map();
+//   if (uniqueRelatedUserIds.length > 0) {
+//     const { data: relatedProfiles, error: profilesError } = await supabase
+//       .from('profiles')
+//       .select('id, username, full_name, profile_picture_url');
+
+//     if (profilesError) {
+//       console.error("Error fetching related profiles for sessions:", profilesError);
+//     } else if (relatedProfiles) {
+//       relatedProfiles.forEach(profile => {
+//         profilesMap.set(profile.id, profile);
+//       });
+//     }
+//   }
+
+//   const enrichedSessions = rawSessions.map(session => ({
+//     ...session,
+//     proposer_profile: profilesMap.get(session.proposer_id),
+//     attendee_profile: profilesMap.get(session.attendee_id),
+//     last_reschedule_initiator_profile: profilesMap.get(session.last_reschedule_initiator_id),
+//     // FIX: Safely access session.ratings by providing an empty array if null/undefined
+//     feedbackGiven: (session.ratings || []).some(rating => rating.rater_id === currentUserId),
+//   }));
+
+//   const sessionsYouProposed = enrichedSessions.filter(session => session.proposer_id === currentUserId);
+//   const sessionsWithYou = enrichedSessions.filter(session => session.attendee_id === currentUserId);
+
+//   const formatDateTime = (isoString) => {
+//     if (!isoString) return 'Not set';
+//     const date = new Date(isoString);
+//     return date.toLocaleString();
+//   };
+
+//   return (
+//     <div className="container mx-auto py-8 max-w-5xl">
+//       <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">My Learning Sessions</h1>
+
+//       {/* Sessions You Proposed Section */}
+//       <section className="mb-10">
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions You Proposed</h2>
+//         {sessionsYouProposed.length === 0 ? (
+//           <p className="text-gray-600">You haven't proposed any sessions yet. Accept a peer request or find a connected peer to propose one!</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsYouProposed.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.attendee_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.attendee_profile?.username}`} alt={session.attendee_profile?.full_name} />
+//                     <AvatarFallback>{session.attendee_profile?.full_name?.charAt(0) || session.attendee_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">With {session.attendee_profile?.full_name || session.attendee_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.attendee_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+                  
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+//                     feedbackGiven={session.feedbackGiven}
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+
+//       {/* Sessions With You Section (where you are the attendee) */}
+//       <section>
+//         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sessions With You</h2>
+//         {sessionsWithYou.length === 0 ? (
+//           <p className="text-gray-600">No sessions proposed to you yet.</p>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {sessionsWithYou.map(session => (
+//               <Card key={session.id} className="p-4">
+//                 <CardHeader className="flex flex-row items-center space-x-3 pb-2">
+//                   <Avatar className="h-12 w-12">
+//                     <AvatarImage src={session.proposer_profile?.profile_picture_url || `https://api.dicebear.com/7.x/lorelei/svg?seed=${session.proposer_profile?.username}`} alt={session.proposer_profile?.full_name} />
+//                     <AvatarFallback>{session.proposer_profile?.full_name?.charAt(0) || session.proposer_profile?.username?.charAt(0) || '?'}</AvatarFallback>
+//                   </Avatar>
+//                   <div>
+//                     <CardTitle className="text-lg">From {session.proposer_profile?.full_name || session.proposer_profile?.username || 'Unknown User'}</CardTitle>
+//                     <CardDescription className="text-sm">@{session.proposer_profile?.username || 'unknown'}</CardDescription>
+//                   </div>
+//                 </CardHeader>
+//                 <CardContent className="pt-2">
+//                   <p className="text-gray-700 mb-2">
+//                     **Topic:** <span className="font-medium">{session.topic}</span>
+//                   </p>
+//                   <p className="text-gray-600 text-sm italic mb-2">"{session.description}"</p>
+
+//                   <div className="flex items-center text-sm text-gray-500 mb-2">
+//                     <CalendarDays className="h-4 w-4 mr-1" />
+//                     <span>{formatDateTime(session.proposed_datetime)} ({session.duration_minutes} mins)</span>
+//                   </div>
+//                   {session.meeting_link && (
+//                     <div className="flex items-center text-sm text-blue-600 hover:underline mb-2">
+//                       <LinkIcon className="h-4 w-4 mr-1" />
+//                       <a href={session.meeting_link} target="_blank" rel="noopener noreferrer">Meeting Link</a>
+//                     </div>
+//                   )}
+
+//                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+//                     <span>Proposed on {new Date(session.created_at).toLocaleDateString()}</span>
+//                     {session.status === 'proposed' && <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Proposed</Badge>}
+//                     {session.status === 'accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Accepted</Badge>}
+//                     {session.status === 'rescheduled_pending' && <Badge variant="outline" className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1" /> Reschedule Pending</Badge>}
+//                     {session.status === 'rescheduled_accepted' && <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Reschedule Accepted</Badge>}
+//                     {session.status === 'cancelled' && <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Cancelled</Badge>}
+//                     {session.status === 'completed' && <Badge className="bg-blue-100 text-blue-800"><CheckCircle className="h-3 w-3 mr-1" /> Completed</Badge>}
+//                   </div>
+//                   <SessionActionButtons
+//                     sessionId={session.id}
+//                     sessionStatus={session.status}
+//                     currentUserId={currentUserId}
+//                     proposerId={session.proposer_id}
+//                     attendeeId={session.attendee_id}
+//                     lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+//                     feedbackGiven={session.feedbackGiven}
+//                   />
+//                 </CardContent>
+//               </Card>
+//             ))}
+//           </div>
+//         )}
+//       </section>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
 // app/my-sessions/page.jsx
 // No "use client"; directive here, making this a Server Component by default
 
@@ -1156,10 +1833,13 @@ export default async function MySessionsPage() {
 
   const currentUserId = user.id;
 
-  // NEW: Select the last_reschedule_initiator_id column
   const { data: rawSessions, error: sessionsError } = await supabase
     .from('sessions')
-    .select('*, last_reschedule_initiator_id')
+    .select(`
+      *,
+      last_reschedule_initiator_id,
+      ratings(id, rater_id) // Fetch related ratings to check if current user has rated
+    `)
     .or(`proposer_id.eq.${currentUserId},attendee_id.eq.${currentUserId}`);
 
   if (sessionsError) {
@@ -1176,7 +1856,7 @@ export default async function MySessionsPage() {
   rawSessions.forEach(session => {
     allRelatedUserIds.add(session.proposer_id);
     allRelatedUserIds.add(session.attendee_id);
-    if (session.last_reschedule_initiator_id) { // Add initiator to map
+    if (session.last_reschedule_initiator_id) {
       allRelatedUserIds.add(session.last_reschedule_initiator_id);
     }
   });
@@ -1202,7 +1882,13 @@ export default async function MySessionsPage() {
     ...session,
     proposer_profile: profilesMap.get(session.proposer_id),
     attendee_profile: profilesMap.get(session.attendee_id),
-    last_reschedule_initiator_profile: profilesMap.get(session.last_reschedule_initiator_id), // NEW: Map initiator profile
+    last_reschedule_initiator_profile: profilesMap.get(session.last_reschedule_initiator_id),
+    // FIX: Ensure session.ratings is an array before calling .some()
+    // If session.ratings is an object (single rating), convert it to an array.
+    // If it's null/undefined, default to an empty array.
+    feedbackGiven: Array.isArray(session.ratings)
+      ? session.ratings.some(rating => rating.rater_id === currentUserId)
+      : (session.ratings && session.ratings.rater_id === currentUserId), // If it's a single object
   }));
 
   const sessionsYouProposed = enrichedSessions.filter(session => session.proposer_id === currentUserId);
@@ -1269,7 +1955,8 @@ export default async function MySessionsPage() {
                     currentUserId={currentUserId}
                     proposerId={session.proposer_id}
                     attendeeId={session.attendee_id}
-                    lastRescheduleInitiatorId={session.last_reschedule_initiator_id} // NEW: Pass initiator ID
+                    lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+                    feedbackGiven={session.feedbackGiven}
                   />
                 </CardContent>
               </Card>
@@ -1329,7 +2016,8 @@ export default async function MySessionsPage() {
                     currentUserId={currentUserId}
                     proposerId={session.proposer_id}
                     attendeeId={session.attendee_id}
-                    lastRescheduleInitiatorId={session.last_reschedule_initiator_id} // NEW: Pass initiator ID
+                    lastRescheduleInitiatorId={session.last_reschedule_initiator_id}
+                    feedbackGiven={session.feedbackGiven}
                   />
                 </CardContent>
               </Card>
